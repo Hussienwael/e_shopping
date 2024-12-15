@@ -3,8 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'screens/login_screen.dart';
-import 'screens/sign_up_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/sign_up_screen.dart';
+import 'screens/home/categories_screen.dart';
+import 'screens/cart/cart_screen.dart';
+import 'screens/cart/cart_provider.dart';
+import 'screens/home/products_screen.dart';
 
 void main() async {
  WidgetsFlutterBinding.ensureInitialized();
@@ -27,15 +31,15 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Log In',
+      debugShowCheckedModeBanner: false,
+      title: 'E-Shopping',
       theme: ThemeData(
         primarySwatch: Colors.red,
       ),
-      home: LoginScreen(),  // Start with the login screen
+      home: LoginScreen(), // Start with the home screen
     );
   }
 }
