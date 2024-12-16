@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ProductsScreen extends StatefulWidget {
   final String categoryId; // Category ID passed from CategoriesScreen
 
-  ProductsScreen({required this.categoryId}); // Add image URL to this attributes
+  ProductsScreen({required this.categoryId});
 
   @override
   _ProductsScreenState createState() => _ProductsScreenState();
@@ -13,16 +13,44 @@ class ProductsScreen extends StatefulWidget {
 class _ProductsScreenState extends State<ProductsScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Method to add product to the cart
+  // Method to add product to the cart and decrement QuantityInStock
   Future<void> _addToCart(Map<String, dynamic> productData, String productId) async {
+    final DocumentReference productRef = _firestore
+        .collection('categories')
+        .doc(widget.categoryId)
+        .collection('products')
+        .doc(productId);
+
     try {
-      await _firestore.collection('cart').add({
-        'productId': productId,
-        'name': productData['name'],
-        'price': productData['price'],
-        'imageUrl': productData['imageUrl'], // Add imageUrl to the cart
-        'quantity': 1, // Default quantity
-        'addedAt': FieldValue.serverTimestamp(),
+      // Run a Firestore transaction to ensure data consistency
+      await _firestore.runTransaction((transaction) async {
+        // Fetch the product document
+        DocumentSnapshot productSnapshot = await transaction.get(productRef);
+
+        if (!productSnapshot.exists) {
+          throw Exception("Product does not exist!");
+        }
+
+        // Get current QuantityInStock
+        int currentStock = productSnapshot['quantityInStock'] ?? 0;
+
+        // Check if the product is in stock
+        if (currentStock <= 0) {
+          throw Exception("Product is out of stock!");
+        }
+
+        // Add product to the cart
+        await _firestore.collection('cart').add({
+          'productId': productId,
+          'name': productData['name'],
+          'price': productData['price'],
+          'imageUrl': productData['imageUrl'], // Add imageUrl to the cart
+          'quantity': 1, // Default quantity
+          'addedAt': FieldValue.serverTimestamp(),
+        });
+
+        // Decrement the QuantityInStock
+        transaction.update(productRef, {'quantityInStock': currentStock - 1});
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -30,7 +58,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to add product to cart: $e')),
+        SnackBar(content: Text('Error: $e')),
       );
     }
   }
@@ -70,16 +98,20 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
               return ListTile(
                 title: Text(productData['name']),
-                subtitle: Text('\$${productData['price']}'),
+                subtitle: Text('\$${productData['price']} - Stock: ${productData['quantityInStock']}'),
                 leading: productData['imageUrl'] != null
-                    ? Image.network(productData['imageUrl'], width: 50, height: 50, fit: BoxFit.cover)
-                    : Container(width: 50, height: 50), // Placeholder if imageUrl is missing
+                    ? Image.network(
+                  productData['imageUrl'],
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                )
+                    : Container(width: 50, height: 50, color: Colors.grey), // Placeholder if no image
                 trailing: IconButton(
                   icon: Icon(Icons.add_shopping_cart),
                   color: Theme.of(context).primaryColor,
                   onPressed: () => _addToCart(productData, product.id),
                 ),
-
               );
             },
           );

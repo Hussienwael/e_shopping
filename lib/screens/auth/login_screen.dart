@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../home/home_screen.dart';
 import '../admin/admin_dashboard_screen.dart';
 import 'sign_up_screen.dart';
@@ -15,7 +16,46 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
+  bool _rememberMe = false;
 
+  // To load saved user data if Remember Me is enabled
+  @override
+  void initState() {
+    super.initState();
+    _loadUserCredentials();
+  }
+
+  // Load the user credentials from SharedPreferences
+  void _loadUserCredentials() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedEmail = prefs.getString('email');
+    String? savedPassword = prefs.getString('password');
+    bool rememberMe = prefs.getBool('rememberMe') ?? false;
+
+    if (rememberMe) {
+      _emailController.text = savedEmail ?? '';
+      _passwordController.text = savedPassword ?? '';
+    }
+    setState(() {
+      _rememberMe = rememberMe;
+    });
+  }
+
+  // Save the user credentials if Remember Me is selected
+  void _saveUserCredentials() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (_rememberMe) {
+      prefs.setString('email', _emailController.text);
+      prefs.setString('password', _passwordController.text);
+      prefs.setBool('rememberMe', true);
+    } else {
+      prefs.remove('email');
+      prefs.remove('password');
+      prefs.setBool('rememberMe', false);
+    }
+  }
+
+  // Function to submit the login
   Future<void> login() async {
     try {
       setState(() {
@@ -28,9 +68,12 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text,
       );
 
+      // Save credentials if Remember Me is checked
+      _saveUserCredentials();
+
       // Fetch user role from Firestore
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users') // Replace with your Firestore collection
+          .collection('users')
           .doc(userCredential.user!.uid)
           .get();
 
@@ -93,6 +136,16 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // Function to send password reset email
+  Future<void> _resetPassword() async {
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: _emailController.text);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Password reset email sent')));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,6 +178,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   return null;
                 },
               ),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _rememberMe,
+                    onChanged: (value) {
+                      setState(() {
+                        _rememberMe = value!;
+                      });
+                    },
+                  ),
+                  Text("Remember Me"),
+                ],
+              ),
               SizedBox(height: 20),
               _isLoading
                   ? CircularProgressIndicator()
@@ -135,6 +201,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   }
                 },
                 child: Text('Login'),
+              ),
+              SizedBox(height: 10),
+              TextButton(
+                onPressed: _resetPassword,
+                child: Text('Forgot Password?'),
               ),
               TextButton(
                 onPressed: () {

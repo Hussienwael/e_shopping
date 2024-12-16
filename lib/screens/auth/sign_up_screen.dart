@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'login_screen.dart';
+
 class SignUpScreen extends StatefulWidget {
   @override
   _SignUpScreenState createState() => _SignUpScreenState();
@@ -15,15 +16,43 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   var _isLoading = false;
 
+  DateTime? _selectedDate;
+
+  // Function to handle sign-up
   Future<void> signUp() async {
     try {
       setState(() {
         _isLoading = true;
       });
+
+      // Create the user with email and password
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text,
         password: _passwordController.text,
       );
+
+      // Save the user data including email, birthdate, and default role to Firestore
+      if (_selectedDate != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(FirebaseAuth.instance.currentUser!.uid)
+            .set({
+          'email': _emailController.text,
+          'birthdate': _selectedDate?.toIso8601String(),
+          'role': 'user',  // Set the default role to "user"
+        });
+      } else {
+        // If no birthdate is selected, still create the user with only email and role
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(FirebaseAuth.instance.currentUser!.uid)
+            .set({
+          'email': _emailController.text,
+          'role': 'user',  // Default role
+        });
+      }
+
+      // Navigate to the Login screen after successful signup
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => LoginScreen()),
@@ -51,6 +80,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
     } finally {
       setState(() {
         _isLoading = false;
+      });
+    }
+  }
+
+  // Function to handle birthdate picker
+  Future<void> _selectBirthDate(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (pickedDate != null && pickedDate != _selectedDate) {
+      setState(() {
+        _selectedDate = pickedDate;
       });
     }
   }
@@ -87,6 +131,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   return null;
                 },
               ),
+              SizedBox(height: 20),
+              // Birthdate picker
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _selectedDate == null
+                        ? 'No birthdate selected'
+                        : 'Birthdate: ${_selectedDate!.toLocal().toString().split(' ')[0]}',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => _selectBirthDate(context),
+                    child: Text('Pick Date'),
+                  ),
+                ],
+              ),
+
               SizedBox(height: 20),
               _isLoading
                   ? CircularProgressIndicator()

@@ -1,22 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'products_screen.dart'; // Import the products screen
+import 'products_screen.dart';
 
-class CategoriesScreen extends StatefulWidget {
-  @override
-  _CategoriesScreenState createState() => _CategoriesScreenState();
-}
+class CategoriesScreen extends StatelessWidget {
+  final String searchQuery; // Accepts search query from HomeScreen
 
-class _CategoriesScreenState extends State<CategoriesScreen> {
-  // Reference to Firestore to fetch categories
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  CategoriesScreen({this.searchQuery = ""});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore.collection('categories').snapshots(),
+        stream: FirebaseFirestore.instance.collection('categories').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -30,8 +25,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             return Center(child: Text('No categories available'));
           }
 
-          // Get the categories from Firestore
-          var categories = snapshot.data!.docs;
+          // Filter categories based on the search query
+          var categories = snapshot.data!.docs.where((doc) {
+            if (searchQuery.isEmpty) return true; // Show all if no query
+            return doc['name']
+                .toString()
+                .toLowerCase()
+                .contains(searchQuery.toLowerCase());
+          }).toList();
 
           return ListView.builder(
             itemCount: categories.length,
@@ -46,7 +47,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => ProductsScreen(
-                        categoryId: category.id, // Pass the categoryId to the ProductsScreen
+                        categoryId: category.id, // Pass the categoryId to ProductsScreen
                       ),
                     ),
                   );

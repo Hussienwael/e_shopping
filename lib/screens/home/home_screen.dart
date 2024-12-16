@@ -1,8 +1,9 @@
-import 'package:e_shopping/screens/home/products_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication
+import '../auth/login_screen.dart';
 import '../cart/cart_screen.dart';
-import 'categories_screen.dart';
-import '../admin/admin_dashboard_screen.dart'; // Import the AdminScreen
+import 'categories_screen.dart'; // Import your LoginScreen
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -11,8 +12,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  final _searchController = TextEditingController();
+  stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
 
-  // List of widgets for navigation
+  String _searchQuery = "";
+
   final List<Widget> _screens = [
     CategoriesScreen(),
     CartScreen(),
@@ -24,22 +29,90 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  // Voice search toggle
+  void _toggleListening() async {
+    if (!_isListening) {
+      bool available = await _speech.initialize();
+      if (available) {
+        setState(() {
+          _isListening = true;
+        });
+        _speech.listen(onResult: (result) {
+          setState(() {
+            _searchController.text = result.recognizedWords;
+            _searchQuery = result.recognizedWords;
+          });
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Speech recognition not available")));
+      }
+    } else {
+      _speech.stop();
+      setState(() {
+        _isListening = false;
+      });
+    }
+  }
+
+  // Logout Function
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut(); // Sign out the user
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => LoginScreen()), // Navigate to LoginScreen
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Logout failed: $e")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(_selectedIndex == 0 ? 'Categories' : 'Your Cart'),
         actions: [
+          // Search bar only on Categories screen
+          if (_selectedIndex == 0)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search categories...',
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                ),
+              ),
+            ),
+          if (_selectedIndex == 0)
+            IconButton(
+              icon: Icon(_isListening ? Icons.mic_off : Icons.mic),
+              onPressed: _toggleListening,
+            ),
+          // Logout button
           IconButton(
-            icon: Icon(Icons.search),
-            onPressed: () {
-              // Handle search action
-            },
+            icon: Icon(Icons.logout),
+            onPressed: _logout, // Call logout function
+            tooltip: 'Logout',
           ),
-          // Admin Button to navigate to Admin Panel
         ],
       ),
-      body: _screens[_selectedIndex],
+      body: _selectedIndex == 0
+          ? CategoriesScreen(searchQuery: _searchQuery)
+          : _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(
@@ -49,10 +122,6 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_cart),
             label: 'Cart',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
           ),
         ],
         currentIndex: _selectedIndex,

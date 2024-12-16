@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../admin/FeedBackFormScreen.dart';
 
 class CartScreen extends StatelessWidget {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -18,74 +19,49 @@ class CartScreen extends StatelessWidget {
     }
   }
 
-  // Function to decrement quantity in the products collection
-  Future<void> decrementProductQuantity(String productId, int quantity) async {
+  // Submit the transaction records into Firestore
+  Future<void> submitTransaction(BuildContext context, List<QueryDocumentSnapshot> cartItems, double totalPrice) async {
     try {
-      var productSnapshot = await _firestore.collection('products').doc(productId).get();
-      if (productSnapshot.exists) {
-        var productData = productSnapshot.data()!;
-        int stockQuantity = productData['quantityInStock'];
-        if (stockQuantity >= quantity) {
-          await _firestore.collection('products').doc(productId).update({
-            'quantityInStock': stockQuantity - quantity,
-          });
-        } else {
-          throw 'Insufficient stock';
-        }
-      }
-    } catch (e) {
-      print("Error decrementing quantity: $e");
-    }
-  }
+      // Step 1: Generate a unique order ID
+      String orderId = DateTime.now().millisecondsSinceEpoch.toString();
 
-  // Function to add a transaction record
-  Future<void> addTransaction(List<Map<String, dynamic>> cartItems, double totalPrice) async {
-    try {
-      var transaction = await _firestore.collection('transactions').add({
-        'products': cartItems,
-        'totalPrice': totalPrice,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-
-      print("Transaction added: ${transaction.id}");
-    } catch (e) {
-      print("Error adding transaction: $e");
-    }
-  }
-
-  // Function to handle order submission
-  Future<void> submitOrder(List<QueryDocumentSnapshot> cartItems, double totalPrice, BuildContext context) async {
-    try {
-      // Decrement the quantity for each product
-      for (var cartItem in cartItems) {
-        var productId = cartItem.id;
-        var quantity = cartItem['quantity'];
-        await decrementProductQuantity(productId, quantity);
-      }
-
-      // Add the transaction record to Firestore
-      List<Map<String, dynamic>> cartProductDetails = cartItems.map((item) {
+      // Step 2: Prepare transaction data
+      List<Map<String, dynamic>> transactionProducts = cartItems.map((item) {
         return {
-          'productId': item.id,
-          'name': item['name'],
-          'price': item['price'],
-          'quantity': item['quantity'],
+          'productId': item['productId'] ?? '',
+          'name': item['name'] ?? 'No Name',
+          'quantity': item['quantity'] ?? 1,
+          'price': item['price'] ?? 0.0,
+          'total': item['price'] * item['quantity'],
         };
       }).toList();
 
-      await addTransaction(cartProductDetails, totalPrice);
+      // Step 3: Add the transaction to the transactions table
+      await _firestore.collection('transactions').doc(orderId).set({
+        'orderId': orderId,
+        'products': transactionProducts,
+        'totalPrice': totalPrice,
+        'timestamp': FieldValue.serverTimestamp(), // Add timestamp to Firestore document
+      });
 
-      // After submission, remove all items from the cart
-      for (var cartItem in cartItems) {
-        await removeFromCart(cartItem.id);
+      // Step 4: Clear the cart collection
+      for (var item in cartItems) {
+        await _firestore.collection('cart').doc(item.id).delete();
       }
 
-      // Show confirmation message
+      // Step 5: Navigate to Feedback Form screen
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Order submitted! Total: \$${totalPrice.toStringAsFixed(2)}')),
+        SnackBar(content: Text('Order submitted successfully! Total: \$${totalPrice.toStringAsFixed(2)}')),
+      );
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FeedbackFormScreen(orderId: orderId),
+        ),
       );
     } catch (e) {
-      print("Error submitting order: $e");
+      // Handle any errors that occur
+      print('Error submitting transaction: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to submit order. Please try again later.')),
       );
@@ -95,9 +71,8 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Cart')),
       body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore.collection('cart').snapshots(),
+        stream: _firestore.collection('cart').snapshots(), // Fetch cart items in real-time
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -129,7 +104,7 @@ class CartScreen extends StatelessWidget {
                     return ListTile(
                       leading: cartItem['imageUrl'] != null
                           ? Image.network(
-                        cartItem['imageUrl'], // Display product image from Firestore
+                        cartItem['imageUrl'],
                         width: 50,
                         height: 50,
                         fit: BoxFit.cover,
@@ -173,9 +148,7 @@ class CartScreen extends StatelessWidget {
                 ),
               ),
               ElevatedButton(
-                onPressed: () {
-                  submitOrder(cartItems, totalPrice, context); // Pass context here
-                },
+                onPressed: () => submitTransaction(context, cartItems, totalPrice),
                 child: Text('Submit Order'),
               ),
             ],
