@@ -16,3 +16,4 @@ class CartItem {
 
 // Global list to manage cart items
 List<CartItem> globalCartItems = [];
+//#
