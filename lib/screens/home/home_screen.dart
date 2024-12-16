@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication
 import '../auth/login_screen.dart';
 import '../cart/cart_screen.dart';
 import 'categories_screen.dart'; // Import your LoginScreen
-
+///
 class HomeScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
