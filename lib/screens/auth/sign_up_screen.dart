@@ -52,7 +52,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         });
       }
 
-      // Navigate to the Login screen after successful signup
+      // Navigate to the login screen after successful signup
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => LoginScreen()),
