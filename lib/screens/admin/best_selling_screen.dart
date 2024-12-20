@@ -44,7 +44,7 @@ class _BestSellingProductsChartState extends State<BestSellingProductsChart> {
       );
     }
   }
-
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
