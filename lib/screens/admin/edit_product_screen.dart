@@ -25,7 +25,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
     _fetchCategories();
   }
 
-  // Fetch categories from Firestore
   Future<void> _fetchCategories() async {
     try {
       var categorySnapshot = await _firestore.collection('categories').get();
@@ -37,7 +36,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
     }
   }
 
-  // Fetch products based on selected category
   Future<void> _fetchProducts(String categoryName) async {
     try {
       var categorySnapshot = await _firestore
@@ -143,7 +141,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Edit Product')),
+      appBar: AppBar(title: Text('Edit Product'), backgroundColor: Colors.blue),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -174,6 +172,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
               }).toList(),
             ),
             SizedBox(height: 16),
+
             DropdownButtonFormField<String>(
               value: _selectedProduct,
               hint: Text('Select Product'),
@@ -193,28 +192,57 @@ class _EditProductScreenState extends State<EditProductScreen> {
               }).toList(),
             ),
             SizedBox(height: 16),
+
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(labelText: 'Product Name'),
+              decoration: InputDecoration(
+                labelText: 'Product Name',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              ),
             ),
+            SizedBox(height: 16),
+
             TextField(
               controller: _priceController,
-              decoration: InputDecoration(labelText: 'Price'),
+              decoration: InputDecoration(
+                labelText: 'Price',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              ),
               keyboardType: TextInputType.number,
             ),
+            SizedBox(height: 16),
+
             TextField(
               controller: _quantityController,
-              decoration: InputDecoration(labelText: 'Quantity in Stock'),
+              decoration: InputDecoration(
+                labelText: 'Quantity in Stock',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              ),
               keyboardType: TextInputType.number,
             ),
+            SizedBox(height: 16),
+
             TextField(
               controller: _imageUrlController,
-              decoration: InputDecoration(labelText: 'Image URL'),
+              decoration: InputDecoration(
+                labelText: 'Image URL',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              ),
             ),
             SizedBox(height: 20),
+
             ElevatedButton(
               onPressed: _updateProduct,
               child: Text('Update Product'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding: EdgeInsets.symmetric(vertical: 16),
+                textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
