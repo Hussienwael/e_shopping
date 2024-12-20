@@ -20,7 +20,6 @@ class _DeleteProductScreenState extends State<DeleteProductScreen> {
     _fetchCategories();
   }
 
-  // Fetch categories from Firestore
   Future<void> _fetchCategories() async {
     try {
       var categorySnapshot = await _firestore.collection('categories').get();
@@ -32,7 +31,6 @@ class _DeleteProductScreenState extends State<DeleteProductScreen> {
     }
   }
 
-  // Fetch products based on selected category
   Future<void> _fetchProducts(String categoryName) async {
     try {
       var categorySnapshot = await _firestore
@@ -57,7 +55,6 @@ class _DeleteProductScreenState extends State<DeleteProductScreen> {
     }
   }
 
-  // Delete selected product
   Future<void> _deleteProduct() async {
     try {
       if (_selectedCategory == null || _selectedProduct == null) {
@@ -78,7 +75,6 @@ class _DeleteProductScreenState extends State<DeleteProductScreen> {
 
       var categoryId = categorySnapshot.docs.first.id;
 
-      // Get product ID
       var productSnapshot = await _firestore
           .collection('categories')
           .doc(categoryId)
@@ -93,7 +89,6 @@ class _DeleteProductScreenState extends State<DeleteProductScreen> {
 
       var productId = productSnapshot.docs.first.id;
 
-      // Delete product
       await _firestore
           .collection('categories')
           .doc(categoryId)
@@ -115,7 +110,7 @@ class _DeleteProductScreenState extends State<DeleteProductScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Delete Product')),
+      appBar: AppBar(title: Text('Delete Product'), backgroundColor: Colors.red),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -140,8 +135,13 @@ class _DeleteProductScreenState extends State<DeleteProductScreen> {
                   child: Text(category),
                 );
               }).toList(),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              ),
             ),
             SizedBox(height: 16),
+
             DropdownButtonFormField<String>(
               value: _selectedProduct,
               hint: Text('Select Product'),
@@ -156,12 +156,21 @@ class _DeleteProductScreenState extends State<DeleteProductScreen> {
                   child: Text(product),
                 );
               }).toList(),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              ),
             ),
             SizedBox(height: 20),
+
             ElevatedButton(
               onPressed: _deleteProduct,
               child: Text('Delete Product'),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                padding: EdgeInsets.symmetric(vertical: 15),
+                textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
