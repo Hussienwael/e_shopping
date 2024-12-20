@@ -7,6 +7,10 @@ class AddCategoryScreen extends StatelessWidget {
 
   Future<void> _addCategory(BuildContext context) async {
     try {
+      if (_nameController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please enter a category name')));
+        return;
+      }
       await _firestore.collection('categories').add({
         'name': _nameController.text,
       });
@@ -21,19 +25,33 @@ class AddCategoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Add Category')),
+      appBar: AppBar(
+        title: Text('Add Category'),
+        centerTitle: true,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(labelText: 'Category Name'),
+              decoration: InputDecoration(
+                labelText: 'Category Name',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+              ),
+              style: TextStyle(fontSize: 16),
             ),
             SizedBox(height: 20),
+
             ElevatedButton(
               onPressed: () => _addCategory(context),
               child: Text('Add Category'),
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: 15),
+                textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
