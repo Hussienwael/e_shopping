@@ -1,10 +1,12 @@
+import 'package:e_shopping/screens/admin/best_selling_screen.dart';
 import 'package:e_shopping/screens/admin/transaction_report_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Firebase Auth import
+import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/login_screen.dart';
 import 'FeedBackListScreen.dart';
-import 'category_form_screen.dart'; // Import Category Form Screen
-import 'product_form_screen.dart'; // Import Product Form Screen (Create your product screen)
+import 'category_form_screen.dart';
+import 'product_form_screen.dart';
+import 'best_selling_screen.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   @override
@@ -17,11 +19,9 @@ class AdminDashboardScreen extends StatelessWidget {
             icon: Icon(Icons.logout),
             onPressed: () async {
               try {
-                // Perform Firebase logout
                 await FirebaseAuth.instance.signOut();
-                // Navigate to the login screen
                 Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => LoginScreen()), // Navigate directly to LoginScreen
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
                 );
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -36,49 +36,76 @@ class AdminDashboardScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
-            // Button to manage products
-            ElevatedButton(
+            _buildDashboardButton(
+              context,
+              label: 'Manage Products',
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ProductFormScreen()), // Navigate to product management
+                  MaterialPageRoute(builder: (context) => ProductFormScreen()),
                 );
               },
-              child: Text('Manage Products'),
             ),
-
-            // Button to manage categories
-            ElevatedButton(
+            _buildDashboardButton(
+              context,
+              label: 'Manage Categories',
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => CategoryFormScreen()), // Navigate to category management
+                  MaterialPageRoute(builder: (context) => CategoryFormScreen()),
                 );
               },
-              child: Text('Manage Categories'),
             ),
-
-            // Button to generate transaction reports
-            ElevatedButton(
+            _buildDashboardButton(
+              context,
+              label: 'Generate Transaction Reports',
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => TransactionReportScreen()), // Navigate to report generation
+                  MaterialPageRoute(builder: (context) => TransactionReportScreen()),
                 );
               },
-              child: Text('Generate Transaction Reports'),
             ),
-            ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => FeedbackListScreen()),
-                  );
-                },
-                child: Text('View Feedback'),
-                ),
+            _buildDashboardButton(
+              context,
+              label: 'View Feedback',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => FeedbackListScreen()),
+                );
+              },
+            ),
+            _buildDashboardButton(
+              context,
+              label: 'View Best Sales',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => BestSellingProductsChart()),
+                );
+              },
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Helper method to create a card button
+  Widget _buildDashboardButton(BuildContext context, {required String label, required VoidCallback onPressed}) {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 10),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        title: Text(
+          label,
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        trailing: Icon(Icons.arrow_forward, color: Colors.blueAccent),
+        onTap: onPressed,
       ),
     );
   }
