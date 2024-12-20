@@ -18,20 +18,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   DateTime? _selectedDate;
 
-  // Function to handle sign-up
   Future<void> signUp() async {
     try {
       setState(() {
         _isLoading = true;
       });
 
-      // Create the user with email and password
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text,
         password: _passwordController.text,
       );
 
-      // Save the user data including email, birthdate, and default role to Firestore
       if (_selectedDate != null) {
         await FirebaseFirestore.instance
             .collection('users')
@@ -52,7 +49,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
         });
       }
 
-      // Navigate to the Login screen after successful Signup
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => LoginScreen()),
@@ -84,7 +80,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-  // Function to handle birthdate picker
   Future<void> _selectBirthDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -102,16 +97,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Sign Up")),
+      appBar: AppBar(
+        title: Text("Sign Up"),
+        centerTitle: true,
+        backgroundColor: Colors.blueAccent,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: Column(
+          child: ListView(
             children: [
+              Text(
+                'Create an Account',
+                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 20),
               TextFormField(
                 controller: _emailController,
-                decoration: InputDecoration(labelText: "Email"),
+                decoration: InputDecoration(
+                  labelText: "Email",
+                  prefixIcon: Icon(Icons.email),
+                  border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.isEmpty || !value.contains('@')) {
@@ -120,9 +131,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   return null;
                 },
               ),
+              SizedBox(height: 15),
               TextFormField(
                 controller: _passwordController,
-                decoration: InputDecoration(labelText: "Password"),
+                decoration: InputDecoration(
+                  labelText: "Password",
+                  prefixIcon: Icon(Icons.lock),
+                  border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty || value.length < 6) {
@@ -145,13 +163,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ElevatedButton(
                     onPressed: () => _selectBirthDate(context),
                     child: Text('Pick Date'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      textStyle: TextStyle(color: Colors.white),
+                      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                   ),
                 ],
               ),
-
               SizedBox(height: 20),
               _isLoading
-                  ? CircularProgressIndicator()
+                  ? Center(child: CircularProgressIndicator())
                   : ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
@@ -159,14 +184,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   }
                 },
                 child: Text('Sign Up'),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 15), backgroundColor: Colors.blueAccent,
+                  textStyle: TextStyle(fontSize: 18),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
               ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => LoginScreen()),
-                  );
-                },
-                child: Text('Already have an account? Log In'),
+              SizedBox(height: 10),
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (context) => LoginScreen()),
+                    );
+                  },
+                  child: Text('Already have an account? Log In'),
+                ),
               ),
             ],
           ),
