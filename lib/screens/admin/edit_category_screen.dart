@@ -38,7 +38,7 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Edit Category')),
+      appBar: AppBar(title: Text('Edit Category'), backgroundColor: Colors.blue),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -82,12 +82,21 @@ class _EditCategoryScreenState extends State<EditCategoryScreen> {
             ),
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(labelText: 'New Category Name'),
+              decoration: InputDecoration(
+                labelText: 'New Category Name',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              ),
             ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () => _updateCategory(context),
               child: Text('Update Category'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding: EdgeInsets.symmetric(vertical: 16),
+                textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
